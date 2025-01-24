@@ -29,13 +29,46 @@ if st.button("Search"):
             conn = sqlite3.connect("tmp/data.db")
             cursor = conn.cursor()
 
-            # Define custom logic for query execution
-            if "electronics" in query.lower():
-                sql_query = "SELECT * FROM products WHERE category = 'Electronics'"
-            elif "under $1000" in query.lower():
-                sql_query = "SELECT * FROM products WHERE price < 1000"
-            else:
-                sql_query = "SELECT * FROM products"
+            # Initialize conditions
+            conditions = []
+
+            # Check for categories
+            possible_categories = [
+                "Electronics", "Clothing", "Appliances", "Footwear",
+                "Accessories", "Furniture", "Sports", "Kitchenware", "Home Decor"
+            ]
+            for category in possible_categories:
+                if category.lower() in query.lower():
+                    conditions.append(f"category = '{category}'")
+
+            # Check for price conditions
+            if "under" in query.lower() and "$" in query:
+                try:
+                    price_limit = float(query.split("under $")[-1].strip())
+                    conditions.append(f"price < {price_limit}")
+                except ValueError:
+                    st.warning("Invalid price value detected.")
+            elif "above" in query.lower() and "$" in query:
+                try:
+                    price_limit = float(query.split("above $")[-1].strip())
+                    conditions.append(f"price > {price_limit}")
+                except ValueError:
+                    st.warning("Invalid price value detected.")
+
+            # Check for colors
+            possible_colors = [
+                "Black", "Silver", "Blue", "Red", "White", "Gray",
+                "Yellow", "Green", "Brown", "Purple", "Navy Blue",
+                "Orange", "Transparent", "Gold"
+            ]
+            for color in possible_colors:
+                if color.lower() in query.lower():
+                    conditions.append(f"color = '{color}'")
+
+            # Build SQL query
+            sql_query = "SELECT * FROM products"
+            if conditions:
+                sql_query += " WHERE " + " AND ".join(conditions)
 
             # Execute query
             cursor.execute(sql_query)
